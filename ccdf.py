@@ -12,6 +12,7 @@ FIELD_LENGTH = 3
 FIELD_OPTIONS = 4
 
 OTHER_ID = (
+	('', 'Not Available'),
 	('STAFF', 'Staff ID'),
 	('STUD', 'Student ID'),
 	('SERV', 'Service ID'),
@@ -27,6 +28,7 @@ MARITAL_STATUS = (
 )
 
 PROOF_OF_ADDRESS = (
+	('', 'Not Available'),
 	('WAT', 'Water Bill'),
 	('ELE', 'Electricity Bill'),
 )
@@ -37,8 +39,7 @@ OWNER_OR_TENANT = (
 	('F', 'Family Owned'),
 )
 
-
-EMPLOYEMENT_TYPE = (
+EMPLOYMENT_TYPE = (
 	('101', 'Salaried Individual'),
 	('102', 'Unemployed'),
 	('103', 'Student'),
@@ -46,7 +47,6 @@ EMPLOYEMENT_TYPE = (
 	('105', 'Home Maker'),
 	('106', 'Pensioner'),
 )
-
 
 CREDIT_FACILITY_TYPE = (
 	('101', 'Agriculture Facility'),
@@ -95,6 +95,7 @@ REPAYMENT_FREQUENCY = (
 )
 
 ASSET_CLASSIFICATION = (
+	('', 'Not Available'),
 	('A', '1 - 30 days'),
 	('B', '31 - 90 days'),
 	('C', '91 - 180 days'),
@@ -117,7 +118,6 @@ CREDIT_FACILITY_STATUS = (
 	('B', 'Approved, but not disbursed'),
 	('W', 'Written Off'),
 )
-
 
 WRITE_OFF_REASON = (
 	('A', 'Part Settlement'),
@@ -157,7 +157,6 @@ PURPOSE_OF_FACILITY = (
 	('L', 'Other'),
 )
 
-
 SPECIAL_COMMENDS_CODE = (
 	('101', 'Paid by Co maker'),
 	('102', 'Loan assumed by another party'),
@@ -195,7 +194,6 @@ SECURITY_TYPE = (
 	('Q', 'Others'),
 )
 
-
 PAYMENT_HISTORY_PROFILE = (
 	('0', '1 to 30 days (Current Account)'),
 	('1', '31 to 60 days past due'),
@@ -221,8 +219,8 @@ JOINT_OR_SOLE_ACCOUNT = (
 	('S', 'Sole'),
 )
 
-def filename(srn, period, created=None, 
-			 submission_no=1, file_id='CONC', version=1.1):
+def filename(srn, period, created=None, submission_no=1, 
+			 file_id='CONC', version=1.1):
 	"""File must always conform to the following file naming convention and 
 	have a unique file name:
 
@@ -257,10 +255,9 @@ def text(value):
 		return ''
 	return '%s' % value
 
-
 def date(value):
-	"""
-	Date fields should contain dates only and should be in YYYYMMDD format where 
+	"""Date fields should contain dates only and should be in YYYYMMDD 
+	format where:
 	YYYY is the usual Gregorian calendar, 
 	MM is the month of the year between 01 (January) and 12 (December), and 
 	DD is the day of the month between 01 and 31. 
@@ -465,6 +462,9 @@ FIELDS = (
 	(178, 'G4Mobile', text, 30, IfAvailable),
 )
 
+FIELD_INDEX = dict()
+for i, f in enumerate(FIELDS):
+	FIELD_INDEX[FIELDS[i][FIELD_NAME]] = i
 
 headers = tuple([x[1] for x in FIELDS])
 
@@ -479,7 +479,25 @@ def row(data):
 			raise ValueError('Mandatory field cannot be blank for %d - %s' % (field[FIELD_NO], field[FIELD_NAME]))
 	return '|'.join([str(x if x else '') for x in values])
 
-def validate(row):
-	values = row.split('|')
-	for i, value in enumerate(values):
-		pass
+def validate(values):
+	assert len(values) is 178
+	assert get_value(values, 'Data') == 'D'
+
+	xs = (
+		('CorrectionIndicator', CORRECTION_INDICATOR),
+		('OtherID', OTHER_ID),
+		('OwnerOrTenant', OWNER_OR_TENANT),
+		('EmpType', EMPLOYMENT_TYPE),
+		('JointOrSoleAcc', JOINT_OR_SOLE_ACCOUNT),
+		('MaritalStatus', MARITAL_STATUS),
+		('ProofOfAddType', PROOF_OF_ADDRESS),
+		('CreditFacilityType', CREDIT_FACILITY_TYPE),
+		('RepaymentFreq', REPAYMENT_FREQUENCY),
+		('AssetClassification', ASSET_CLASSIFICATION),
+	)
+
+	for key, choices in xs:
+		try:  
+			assert get_value(values, key) in [x[0] for x in choices]
+		except AssertionError, e:
+			raise AssertionError('(%s) %s' % (key, e))
