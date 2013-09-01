@@ -4,6 +4,7 @@ import ccdf
 
 class TestCCDF(unittest.TestCase):
 	def test_date(self):
+		self.assertEqual('20080601', ccdf.date(datetime.date(2008, 6, 1)))
 		self.assertEqual('20120205', ccdf.date(datetime.date(2012, 2, 5)))
 
 	def test_file_name(self):
